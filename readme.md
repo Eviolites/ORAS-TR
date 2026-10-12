@@ -4,7 +4,8 @@
 
 This script runs the game’s text through multiple levels of translation between various languages, creating what some people would know as… absolute chaos.
 
-![alt-text](https://i.ibb.co/GQWqqW4C/ismokecigarettes.png "a Team Aqua grunt stating 'I smoke cigarettes'") ![alt-text](https://i.ibb.co/5xWDMgZr/wally.png "Wally fired a bullet from his pocket!") 
+![a Team Aqua grunt stating 'I smoke cigarettes'](imgs/ismokecigarettes.png) 
+![Wally fired a bullet from his pocket!](imgs/wally.png)
 
 ## ✨ Features
 
