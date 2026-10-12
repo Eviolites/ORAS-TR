@@ -6,6 +6,7 @@ Since ORAS appears to hardcode the character limits in for Pokémon names, train
 
 ## How do you know what sections to limit?
 PK3DS exports the text of both the game and story in a format where it is split through 'Text File' headers.
+
 ![alt text](../imgs/example.png "Text File example") 
 
 Through a bit of experimentation including *many* crashes and cross-referencing text from the original story and game of Alpha Sapphire, I've been able to pick out the sections that require limiting due to potential crashes from overflow:
