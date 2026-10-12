@@ -49,6 +49,8 @@ This script runs the game’s text through multiple levels of translation betwee
 
 ## 🎮 Usage
 
+## NOTE: In my experience on an AMD 9070 XT and a 3070 Ti, translation can take up to 2 hours, potentially more on older hardware.
+
 **Step 1: Dump the Text**
 
 1. Open your decrypted ORAS ROM in **pk3DS**.
