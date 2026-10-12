@@ -1,0 +1,7 @@
+# Install the accelerator-aware dependencies with install_requirements.py.
+# The installer detects an existing ROCm/CUDA PyTorch build, or selects CUDA,
+# DirectML, or CPU for a fresh installation.
+transformers>=4.45,<5
+sentencepiece>=0.2
+safetensors>=0.4
+huggingface_hub>=0.26

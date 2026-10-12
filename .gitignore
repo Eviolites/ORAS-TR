@@ -1,0 +1,5 @@
+# Ignored folders
+__pycache__
+.venv
+.venv-amd
+*.zip
