@@ -1,0 +1,94 @@
+# ORAS-TR: Pokémon Omega Ruby / Alpha Sapphire Translator
+
+**ORAS-TR** is an automated Python tool designed to translate text files extracted from Pokémon Omega Ruby and Alpha Sapphire (ORAS) using the local translation model basis of NLLB.
+
+This script runs the game’s text through multiple levels of translation between various languages, creating what some people would know as… absolute chaos.
+
+![alt-text](https://i.ibb.co/GQWqqW4C/ismokecigarettes.png "a Team Aqua grunt stating 'I smoke cigarettes'") ![alt-text](https://i.ibb.co/5xWDMgZr/wally.png "Wally fired a bullet from his pocket!") 
+
+## ✨ Features
+
+* **Local AI Translation:** Translates text entirely offline using your local hardware.
+
+* **Control Code Protection:** Safely isolates and protects game variables, line breaks (`\n`, `\c`), and gender symbols (`♂`, `♀`) so the AI doesn't translate them into garbage text.
+
+* **Infinite Loop Capping:** Dynamically caps translation outputs based on the original English text length to prevent massive infinite-loop strings from crashing the 3DS or emulator.
+
+* **Automated Sanitization:** Cleans up orphaned or broken backslashes (e.g., `\ `) that abort the `pk3DS` import process.
+
+## 📁 Repository Contents
+
+* `ORAS-TR.py` - The main Python translation script.
+
+* `ORAS-TR.bat` - A quick-launch batch file for Windows users to easily execute the script.
+
+* `install_requirements.py` - Setup script to automatically install the required dependencies.
+
+* `requirements.txt` - Python package dependencies list.
+
+## 🛠️ Prerequisites
+
+1. **Python 3.8+** installed on your system. If you do not have Python already, 3.13 is recommended.
+
+2. [pk3DS](https://projectpokemon.org/home/forums/topic/34377-pk3ds-pok%C3%A9mon-3ds-rom-editor-and-randomizer/) (for dumping and re-importing the game text).
+
+3. A dump of Pokémon Omega Ruby or Alpha Sapphire (I personally recommend [this guide](https://3ds.hacks.guide/dumping-titles-and-game-cartridges.html)).
+
+## 🚀 Installation
+
+1. Clone or download this repository to your local machine.
+
+2. Run the included setup script to install the required Python libraries (PyTorch, Transformers, etc.):
+
+   ```
+   python install_requirements.py
+   
+   ```
+
+   *(Alternatively, you can run `pip install -r requirements.txt` or ORAS-TR.bat directly)*
+
+## 🎮 Usage
+
+**Step 1: Dump the Text**
+
+1. Open your decrypted ORAS ROM in **pk3DS**.
+
+2. Navigate to the `Text` section.
+
+3. Export the text you want to translate (e.g., Story Text, Game Text) to a `.txt` file.
+
+**Step 2: Translate**
+
+1. Place the dumped `.txt` file(s) into one directory, as the tool can only take one input.
+
+2. Double-click **`ORAS-TR.bat`** (or run `python ORAS-TR.py` from the command line if you have separately installed the dependencies or already have ran **`ORAS-TR.bat`** once).
+
+3. The script will run the entire script through multiple levels of translation, and output them as `gametext.txt/storytext.txt` depending on the contents of the file.
+
+**Step 3: Re-Import**
+
+1. Open **pk3DS** again.
+
+2. Navigate to the `Text` section and click **Import**.
+
+3. Select your newly translated `.txt` file.
+
+4. Rebuild your RomFS and test it in your emulator!
+
+## ⚠️ Troubleshooting & Known Issues
+
+Because AI translation models can be unpredictable, you may occasionally run into import errors in pk3DS, even with fail-safe methods in place. If `pk3DS` throws an error or aborts the import, use the following Regex searches in VS Code or Notepad++ on your translated `.txt` file to fix the remaining artifacts:
+
+* **Crashing on Import (Broken Variables):** The model may have translated a system variable (e.g., turning `[VAR TRNAME(0000)]` into `[VAR Name(0000)]`). Search for `\[VAR [a-z]` (Regex enabled) to find any variables containing lowercase letters and replace them with the original English bracket.
+
+* **Crashing on Import (Infinite Loops):** If the model panicked and generated an infinite loop of text, it will exceed the memory buffer and crash the game. Search for `^.{150,}$` (Regex enabled) to find lines exceeding 150 characters. Delete the repeated text or revert it to the original English.
+
+* **Stray Backslashes:** Ensure there are no backslashes followed by a space (`\ `). Search for `\\(?![a-zA-Z])` and replace with nothing to clean them up.
+
+## 📝 License
+
+This project is open-source. Please feel free to fork, modify, and improve the script!
+
+## 🤖 AI Declaration
+
+AI (specifically CoPilot and Gemini) was used to assist with the creation of this project. CoPilot was primarily used in the creation of the .bat file whilst Gemini assisted with troubleshooting issues throughout the project. All code has been thoroughly tested on ROCm (9070 XT) and CUDA (3070 Ti) machines, alongside multithreading using CPU (Ryzen 7 7800x3D). All code has been verified and checked by myself, but if there are any concerns or improvements please feel free to make a PR or raise an issue and I will be happy to have a look!
