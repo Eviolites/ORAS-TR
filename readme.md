@@ -26,6 +26,7 @@ This script runs the game’s text through multiple levels of translation betwee
 * `install_requirements.py` - Setup script to automatically install the required dependencies.
 
 * `requirements.txt` - Python package dependencies list.
+  
 
 ## 🛠️ Prerequisites
 
@@ -33,28 +34,47 @@ This script runs the game’s text through multiple levels of translation betwee
 
 2. [pk3DS](https://projectpokemon.org/home/forums/topic/34377-pk3ds-pok%C3%A9mon-3ds-rom-editor-and-randomizer/) (for dumping and re-importing the game text).
 
-3. A dump of Pokémon Omega Ruby or Alpha Sapphire (I personally recommend [this guide](https://3ds.hacks.guide/dumping-titles-and-game-cartridges.html)).
+3. A dump of Pokémon Omega Ruby or Alpha Sapphire (I personally recommend [this guide](https://3ds.hacks.guide/dumping-titles-and-game-cartridges.html) from the 3ds.hacks.guide team).
+
+4. [HackingToolKit9DS](https://github.com/Asia81/HackingToolkit9DS/releases) or any program that can be used to extract the romfs folder from the game.
+
 
 ## 🚀 Installation
 
-1. Clone or download this repository to your local machine.
-
-2. Run the included setup script to install the required Python libraries (PyTorch, Transformers, etc.):
-
-   ```
-   python install_requirements.py
-   
-   ```
-
-   *(Alternatively, you can run `pip install -r requirements.txt` or ORAS-TR.bat directly)*
+1. Download the [latest release](https://github.com/Eviolites/ORAS-TR/releases/tag/alpha) of ORAS-TR.
+2. Unzip the folder and run ORAS-TR.bat. 
 
 ## 🎮 Usage
 
 ## NOTE: In my experience on an AMD 9070 XT and a 3070 Ti, translation can take up to 2 hours, potentially more on older hardware.
 
+**Step 0: Dump the romfs folder**
+
+__With HackingToolKit9DS (game dumps in .cia or .3ds format)__
+
+1. Run SetupUS.exe within HackingToolKit9DS/PackHack in order to install required dependencies.
+
+2. Run HackingToolKit9DS in the same folder, and drag/copy/paste your .cia or .3ds file of your game to this folder.
+
+3. When the command prompt shows, type `D` if you are using a .3ds file, or `CE` if you are using a .cia file. Follow the instructions on the command prompt further.
+
+Once this is completed, you should have a romfs folder that you can use in PK3DS. Just use `File -> Open` and select the PackHack folder, or whichever folder is before your romfs folder.
+
+__With GodMode9 (cartridge game, requires a modded 3DS)__
+
+1. With your cartridge game inserted into your console, hold `START` whilst powering on the console to access GodMode9.
+
+2. Enter `[C:] GAMECART ()` and click on the `<game>.trim.3ds` file.
+
+3. Press `NCSD image options...`, then select `Mount image to drive`. Then, press A to open the drive.
+
+4. Open the `content0.game` folder and your romfs folder should be there.
+
+You can then press `R`+`A` whilst hovering over the folder to copy it to gm9/out on your SD card and transfer it however you prefer.
+
 **Step 1: Dump the Text**
 
-1. Open your decrypted ORAS ROM in **pk3DS**.
+1. Open the folder containing your ORAS romfs folder in **pk3DS**.
 
 2. Navigate to the `Text` section.
 
@@ -64,9 +84,7 @@ This script runs the game’s text through multiple levels of translation betwee
 
 1. Place the dumped `.txt` file(s) into one directory, as the tool can only take one input.
 
-2. Double-click **`ORAS-TR.bat`** (or run `python ORAS-TR.py` from the command line if you have separately installed the dependencies or already have ran **`ORAS-TR.bat`** once).
-
-3. The script will run the entire script through multiple levels of translation, and output them as `gametext.txt/storytext.txt` depending on the contents of the file.
+2. Double-click **`ORAS-TR.bat`**. The script will then run the entire script through multiple levels of translation, and output them as `gametext.txt/storytext.txt` depending on the contents of the file.
 
 **Step 3: Re-Import**
 
