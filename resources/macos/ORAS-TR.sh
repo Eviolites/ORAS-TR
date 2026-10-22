@@ -2,7 +2,8 @@
 set -u
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-cd "$SCRIPT_DIR" || exit 1
+PROJECT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
+cd "$PROJECT_DIR" || exit 1
 
 fail() {
     echo

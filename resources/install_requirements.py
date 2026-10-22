@@ -12,7 +12,9 @@ import subprocess
 import sys
 
 
-COMMON_REQUIREMENTS = "requirements.txt"
+COMMON_REQUIREMENTS = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "requirements.txt"
+)
 
 
 def installed_torch_backend():

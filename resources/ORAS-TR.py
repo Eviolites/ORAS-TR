@@ -291,9 +291,18 @@ class HardwareTranslator:
 
 
 def main():
-    directory = prompt_for_folder("Import folder", "D:/GitHub/ORAS-TR/translation-input")
+    example_root = (
+        "/Users/eviolites/Desktop"
+        if BACKEND == "mps"
+        else "D:/GitHub/ORAS-TR"
+    )
+    directory = prompt_for_folder(
+        "Import folder", os.path.join(example_root, "translation-input")
+    )
     export_directory = prompt_for_folder(
-        "Export folder", "D:/GitHub/ORAS-TR/translation-output", create=True
+        "Export folder",
+        os.path.join(example_root, "translation-output"),
+        create=True,
     )
     state_path = os.path.join(export_directory, "translated.state.json")
     log_path = os.path.join(export_directory, "translation.log")
@@ -317,20 +326,41 @@ def main():
     output_names = {"translated.txt"}
     source_files = []
     source_output_names = {}
+    text_files = []
     for filename in sorted(os.listdir(directory)):
-        if not filename.endswith(".txt") or filename in output_names:
+        filename_key = filename.casefold()
+        if not filename_key.endswith(".txt") or filename_key in output_names:
             continue
+        text_files.append(filename)
         candidate_path = os.path.join(directory, filename)
         with open(candidate_path, "r", encoding="utf-16") as candidate_file:
             candidate_lines = candidate_file.readlines()
-        if len(candidate_lines) >= 4 and "somewhere" in candidate_lines[3].casefold(): # Uses the 4th line to identify the file as gametext.txt, which contains in-game text, while storytext.txt is identified by the presence of "clunk!" in the 26th line.
+        if filename_key == "gametext.txt":
+            source_files.append(filename)
+            source_output_names[filename] = "gametext.txt"
+        elif filename_key == "storytext.txt":
+            source_files.append(filename)
+            source_output_names[filename] = "storytext.txt"
+        elif len(candidate_lines) >= 4 and "somewhere" in candidate_lines[3].casefold(): # Uses the 4th line to identify the file as gametext.txt, which contains in-game text, while storytext.txt is identified by the presence of "clunk!" in the 26th line.
             source_files.append(filename)
             source_output_names[filename] = "gametext.txt" 
         elif len(candidate_lines) >= 26 and "clunk!" in candidate_lines[25].casefold(): # Were there probably better identifiers available? Yes. Did I use them? No. Why? Because I was lazy, lol
             source_files.append(filename)
             source_output_names[filename] = "storytext.txt"
     if not source_files:
-        raise FileNotFoundError(f"No .txt files found in {directory}")
+        if text_files:
+            response = input(
+                "No recognized source markers were found. These files may already "
+                "have been translated. Proceed anyway? (Y/N): "
+            ).strip().casefold()
+            if response != "y":
+                print("Translation cancelled.")
+                return
+            for filename in text_files:
+                source_files.append(filename)
+                source_output_names[filename] = filename
+        else:
+            raise FileNotFoundError(f"No .txt files found in {directory}")
     print(f"Found {len(source_files)} source files: {', '.join(source_files)}")
     source_index = state.get("source_index", 0)
     hop_start = state.get("hop_index", 0)
