@@ -324,10 +324,10 @@ def main():
         maximum_intermediate = len(available_languages)
         while True:
             language_count = input(
-                f"How many intermediate languages?  "
+                "How many intermediate languages?  "
                 "NOTE: Anything over 4 will take a long time to translate, and may result in a lot of gibberish. "
                 "Proceed with caution."
-                "(0-{maximum_intermediate}, default 4): "
+                f"(0-{maximum_intermediate}, default 4): "
             ).strip()
             if not language_count:
                 intermediate_count = 4
