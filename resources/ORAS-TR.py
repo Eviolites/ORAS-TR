@@ -11,7 +11,7 @@ from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 
 MODEL_NAME = os.environ.get("TRANSLATION_MODEL", "facebook/nllb-200-distilled-600M")
-BATCH_SIZE = max(1, int(os.environ.get("TRANSLATION_BATCH_SIZE", "16")))
+BATCH_SIZE = max(1, int(os.environ.get("TRANSLATION_BATCH_SIZE", "32")))
 BACKEND = os.environ.get("TRANSLATION_BACKEND", "auto").casefold()
 LANGUAGE_TOKENS = {
     # European
@@ -226,7 +226,7 @@ class HardwareTranslator:
         print(f"Loading {MODEL_NAME} on {DEVICE_NAME}...") # States the model name and the device being used for translation
         if BACKEND in {"cuda", "rocm"}:
             print(f"{BACKEND.upper()} device: {torch.cuda.get_device_name(0)}")
-        dtype = torch.float16 if BACKEND in {"cuda", "mps"} else torch.float32
+        dtype = torch.float16 if BACKEND in {"cuda", "rocm"} else torch.float32
         self.tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
         self.model = AutoModelForSeq2SeqLM.from_pretrained(
             MODEL_NAME, dtype=dtype, use_safetensors=True,
@@ -254,7 +254,7 @@ class HardwareTranslator:
             with torch.inference_mode():
                 generated = self.model.generate(
                     **encoded, forced_bos_token_id=target_token,
-                    max_new_tokens=512,
+                    max_new_tokens=256,
                 )
             translated.extend(self.tokenizer.batch_decode(generated, skip_special_tokens=True))
             completed = start + len(batch)
@@ -316,11 +316,31 @@ def main():
 
     available_languages = [code for code in LANGUAGE_TOKENS if code != "en"]
     saved_languages = state.get("languages")
-    if (isinstance(saved_languages, list) and len(saved_languages) == 6
-            and saved_languages[0] == "en" and saved_languages[-1] == "en"):
+    if (isinstance(saved_languages, list) and len(saved_languages) >= 2
+            and saved_languages[0] == "en" and saved_languages[-1] == "en"
+            and all(language in LANGUAGE_TOKENS for language in saved_languages)):
         languages = saved_languages
     else:
-        languages = ["en", *random.sample(available_languages, 4), "en"]
+        maximum_intermediate = len(available_languages)
+        while True:
+            language_count = input(
+                f"How many intermediate languages? (0-{maximum_intermediate}, "
+                "default 4): "
+            ).strip()
+            if not language_count:
+                intermediate_count = 4
+                break
+            try:
+                intermediate_count = int(language_count)
+            except ValueError:
+                print("Please enter a whole number.")
+                continue
+            if 0 <= intermediate_count <= maximum_intermediate:
+                break
+            print(f"Please enter a number from 0 to {maximum_intermediate}.")
+        languages = [
+            "en", *random.sample(available_languages, intermediate_count), "en"
+        ]
     print(f"Translation sequence: {' -> '.join(languages)}") # Final sequence of languages to be used for translation, starting and ending with English
 
     output_names = {"translated.txt"}
@@ -335,13 +355,7 @@ def main():
         candidate_path = os.path.join(directory, filename)
         with open(candidate_path, "r", encoding="utf-16") as candidate_file:
             candidate_lines = candidate_file.readlines()
-        if filename_key == "gametext.txt":
-            source_files.append(filename)
-            source_output_names[filename] = "gametext.txt"
-        elif filename_key == "storytext.txt":
-            source_files.append(filename)
-            source_output_names[filename] = "storytext.txt"
-        elif len(candidate_lines) >= 4 and "somewhere" in candidate_lines[3].casefold(): # Uses the 4th line to identify the file as gametext.txt, which contains in-game text, while storytext.txt is identified by the presence of "clunk!" in the 26th line.
+        if len(candidate_lines) >= 4 and "somewhere" in candidate_lines[3].casefold(): # Uses the 4th line to identify the file as gametext.txt, which contains in-game text, while storytext.txt is identified by the presence of "clunk!" in the 26th line.
             source_files.append(filename)
             source_output_names[filename] = "gametext.txt" 
         elif len(candidate_lines) >= 26 and "clunk!" in candidate_lines[25].casefold(): # Were there probably better identifiers available? Yes. Did I use them? No. Why? Because I was lazy, lol
