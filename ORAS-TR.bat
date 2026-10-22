@@ -53,17 +53,17 @@ echo Using Python interpreter:
 if errorlevel 1 goto :failed
 
 echo Installing requirements...
-"%PYTHON%" install_requirements.py %BACKEND_ARG%
+"%PYTHON%" resources/install_requirements.py %BACKEND_ARG%
 if errorlevel 1 goto :failed
 
 echo.
 echo Starting translation...
-"%PYTHON%" ORAS-TR.py
+"%PYTHON%" resources/ORAS-TR.py
 if errorlevel 1 goto :failed
 
 echo.
 echo Translation finished.
-pause
+set /p "EXIT_PROMPT=Press Enter to exit."
 popd
 exit /b 0
 
@@ -72,14 +72,14 @@ echo Usage: ORAS-TR.bat [backend]
 echo.
 echo Backend values: auto, cuda, rocm, directml, cpu
 echo Default: auto-detect the available backend.
-pause
+set /p "EXIT_PROMPT=Press Enter to exit."
 popd
 exit /b 0
 
 :failed
 echo.
 echo The setup or translation process failed.
-pause
+set /p "EXIT_PROMPT=Press Enter to exit."
 popd
 exit /b 1
 
@@ -87,6 +87,6 @@ exit /b 1
 echo.
 echo Python 3.12 or 3.13 could not be installed automatically.
 echo Install Python 3.13 from https://www.python.org/downloads/ and run this file again.
-pause
+set /p "EXIT_PROMPT=Press Enter to exit."
 popd
 exit /b 1

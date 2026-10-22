@@ -1,6 +1,6 @@
 """Install the dependencies for ORAS-TR.
 
-Use --backend to override detection: auto, cuda, rocm, directml, or cpu.
+Use --backend to override detection: auto, mps, cuda, rocm, directml, or cpu.
 """
 
 import argparse
@@ -24,6 +24,8 @@ def installed_torch_backend():
         return None
     if torch.cuda.is_available():
         return "rocm" if torch.version.hip else "cuda"
+    if torch.backends.mps.is_available():
+        return "mps"
     return "cpu"
 
 
@@ -48,8 +50,10 @@ def choose_backend(requested):
     if requested != "auto":
         return requested
     existing = installed_torch_backend()
-    if existing in {"cuda", "rocm"}:
+    if existing in {"mps", "cuda", "rocm"}:
         return existing
+    if platform.system() == "Darwin" and platform.machine() in {"arm64", "aarch64"}:
+        return "mps"
     if has_nvidia_gpu():
         return "cuda"
     if has_windows_gpu():
@@ -73,6 +77,11 @@ def require_supported_torch_python():
 
 
 def install_backend(backend, cuda_index):
+    if backend == "mps":
+        require_supported_torch_python()
+        if installed_torch_backend() not in {"mps", "cpu"}:
+            pip_install("torch")
+        return
     if backend == "rocm":
         if installed_torch_backend() != "rocm":
             raise RuntimeError(
@@ -101,7 +110,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--backend",
-        choices=("auto", "cuda", "rocm", "directml", "cpu"),
+        choices=("auto", "mps", "cuda", "rocm", "directml", "cpu"),
         default=os.environ.get("TRANSLATION_BACKEND", "auto").casefold(),
         help="Backend to install (default: auto, or TRANSLATION_BACKEND).",
     )

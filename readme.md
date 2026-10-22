@@ -23,6 +23,8 @@ This script runs the game’s text through multiple levels of translation betwee
 
 * `ORAS-TR.bat` - A quick-launch batch file for Windows users to easily execute the script.
 
+* `ORAS-TR.sh` - A quick-launch script for macOS users, including Apple Silicon MPS support.
+
 * `install_requirements.py` - Setup script to automatically install the required dependencies.
 
 * `requirements.txt` - Python package dependencies list.
@@ -42,7 +44,9 @@ This script runs the game’s text through multiple levels of translation betwee
 ## 🚀 Installation
 
 1. Download the [latest release](https://github.com/Eviolites/ORAS-TR/releases/tag/alpha) of ORAS-TR.
-2. Unzip the folder and run ORAS-TR.bat. 
+2. Unzip the folder and run `ORAS-TR.bat` on Windows or `./ORAS-TR.sh` on macOS.
+
+On Apple Silicon Macs, the installer automatically selects PyTorch's `mps` backend. You can also select it explicitly with `./ORAS-TR.sh mps`.
 
 ## 🎮 Usage
 

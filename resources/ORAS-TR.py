@@ -87,6 +87,8 @@ def restore_shared_embedding(model):
 def detect_backend():
     if torch.cuda.is_available():
         return "rocm" if torch.version.hip else "cuda"
+    if torch.backends.mps.is_available():
+        return "mps"
     if os.name == "nt":
         try:
             import torch_directml
@@ -103,6 +105,12 @@ def select_device():
         BACKEND = detect_backend()
     if BACKEND == "cpu":
         return torch.device("cpu") # Uses CPU
+    if BACKEND == "mps":
+        if not torch.backends.mps.is_available():
+            raise RuntimeError(
+                "MPS was requested but no compatible Apple Silicon device is available."
+            )
+        return torch.device("mps")
     if BACKEND in {"cuda", "rocm"}:
         if not torch.cuda.is_available():
             backend_name = "ROCm" if BACKEND == "rocm" else "CUDA" # Attempt to load either CUDA or ROCm if available
@@ -125,7 +133,7 @@ def select_device():
         return torch_directml.device()
     raise ValueError(
         f"Unsupported TRANSLATION_BACKEND={BACKEND!r}; "
-        "use directml, rocm, cuda, or cpu."
+        "use mps, directml, rocm, cuda, or cpu."
     )
 
 
