@@ -326,6 +326,8 @@ def main():
             language_count = input(
                 f"How many intermediate languages? (0-{maximum_intermediate}, "
                 "default 4): "
+                "NOTE: Anything over 4 will take a long time to translate, and may result in a lot of gibberish. "
+                "Proceed with caution."
             ).strip()
             if not language_count:
                 intermediate_count = 4
