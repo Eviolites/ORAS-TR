@@ -1,5 +1,6 @@
 #!/bin/sh
 set -u
+export TRANSLATION_BATCH_SIZE="${TRANSLATION_BATCH_SIZE:-32}"
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 PROJECT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)

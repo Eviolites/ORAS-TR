@@ -226,7 +226,7 @@ class HardwareTranslator:
         print(f"Loading {MODEL_NAME} on {DEVICE_NAME}...") # States the model name and the device being used for translation
         if BACKEND in {"cuda", "rocm"}:
             print(f"{BACKEND.upper()} device: {torch.cuda.get_device_name(0)}")
-        dtype = torch.float16 if BACKEND == "cuda" else torch.float32
+        dtype = torch.float16 if BACKEND in {"cuda", "mps"} else torch.float32
         self.tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
         self.model = AutoModelForSeq2SeqLM.from_pretrained(
             MODEL_NAME, dtype=dtype, use_safetensors=True,
