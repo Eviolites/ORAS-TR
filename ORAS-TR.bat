@@ -7,7 +7,7 @@ if /I "%~1"=="-h" goto :help
 
 set "PYTHON="
 if exist ".venv\Scripts\python.exe" (
-	.venv\Scripts\python.exe -c "import sys; raise SystemExit(sys.version_info[:2] !== (3, 12))"
+	.venv\Scripts\python.exe -c "import sys; raise SystemExit(0 if sys.version_info[:2] == (3, 12) else 1)"
 	if not errorlevel 1 set "PYTHON=.venv\Scripts\python.exe"
 	if errorlevel 1 (
 		echo Existing .venv does not use Python 3.12. Recreating it...
@@ -18,11 +18,6 @@ if not defined PYTHON (
 	set "BOOTSTRAP="
 	for /f "delims=" %%V in ('py -3.12 -c "import sys; print(str(sys.version_info[0]) + "." + str(sys.version_info[1]))" 2^>nul') do if "%%V"=="3.12" set "BOOTSTRAP=py -3.12"
 	if not defined BOOTSTRAP for /f "delims=" %%V in ('python -c "import sys; print(str(sys.version_info[0]) + "." + str(sys.version_info[1]))" 2^>nul') do if "%%V"=="3.12" set "BOOTSTRAP=python"
-	if not defined BOOTSTRAP (
-		echo Python 3.12 was not found. Trying the Python install manager...
-		py install 3.12
-		for /f "delims=" %%V in ('py -3.12 -c "import sys; print(str(sys.version_info[0]) + "." + str(sys.version_info[1]))" 2^>nul') do if "%%V"=="3.12" set "BOOTSTRAP=py -3.12"
-	)
 	if not defined BOOTSTRAP (
 		echo Trying winget to install Python 3.12...
 		where winget >nul 2>&1
@@ -51,12 +46,12 @@ echo Using Python interpreter:
 if errorlevel 1 goto :failed
 
 echo Installing requirements...
-"%PYTHON%" install_requirements.py %BACKEND_ARG%
+"%PYTHON%" scripts\install_requirements.py %BACKEND_ARG%
 if errorlevel 1 goto :failed
 
 echo.
 echo Starting translation...
-"%PYTHON%" ORAS-TR.py
+"%PYTHON%" scripts\ORAS-TR.py
 if errorlevel 1 goto :failed
 
 echo.
