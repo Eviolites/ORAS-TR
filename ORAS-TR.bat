@@ -7,7 +7,7 @@ if /I "%~1"=="-h" goto :help
 
 set "PYTHON="
 if exist ".venv\Scripts\python.exe" (
-	.venv\Scripts\python.exe -c "import sys; raise SystemExit(sys.version_info[:2] != (3, 12))"
+	.venv\Scripts\python.exe -c "import sys; raise SystemExit(sys.version_info[:2] !== (3, 12))"
 	if not errorlevel 1 set "PYTHON=.venv\Scripts\python.exe"
 	if errorlevel 1 (
 		echo Existing .venv does not use Python 3.12. Recreating it...

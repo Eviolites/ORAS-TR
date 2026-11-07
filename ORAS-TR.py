@@ -248,7 +248,7 @@ class HardwareTranslator:
                 batch, return_tensors="pt", padding=True, truncation=True,
                 max_length=512,
             ).to(DEVICE)
-            with torch.inference_mode():
+            with torch.no_grad():
                 generated = self.model.generate(
                     **encoded, forced_bos_token_id=target_token,
                     max_new_tokens=512,
@@ -320,12 +320,22 @@ def main():
         candidate_path = os.path.join(directory, filename)
         with open(candidate_path, "r", encoding="utf-16") as candidate_file:
             candidate_lines = candidate_file.readlines()
-        if len(candidate_lines) >= 4 and "somewhere" in candidate_lines[3].casefold(): # Uses the 4th line to identify the file as gametext.txt, which contains in-game text, while storytext.txt is identified by the presence of "clunk!" in the 26th line.
+        if len(candidate_lines) >= 4 and "somewhere" in candidate_lines[3].casefold():
             source_files.append(filename)
             source_output_names[filename] = "gametext.txt" 
-        elif len(candidate_lines) >= 26 and "clunk!" in candidate_lines[25].casefold(): # Were there probably better identifiers available? Yes. Did I use them? No. Why? Because I was lazy, lol
+        elif len(candidate_lines) >= 6846:
+            story_identifier = candidate_lines[6845].casefold()
+            if "blue orb" in story_identifier:
+                game_name = "Alpha Sapphire"
+            elif "red orb" in story_identifier:
+                game_name = "Omega Ruby"
+            else:
+                game_name = None
+            if game_name is None:
+                continue
             source_files.append(filename)
             source_output_names[filename] = "storytext.txt"
+            print(f"Detected {game_name} storytext file: {filename}")
     if not source_files:
         raise FileNotFoundError(f"No .txt files found in {directory}")
     print(f"Found {len(source_files)} source files: {', '.join(source_files)}")
