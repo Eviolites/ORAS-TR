@@ -72,6 +72,15 @@ def require_supported_torch_python():
         )
 
 
+def require_directml_python():
+    if sys.version_info[:2] != (3, 12):
+        raise RuntimeError(
+            f"Python {platform.python_version()} is not supported by torch-directml. "
+            "DirectML installations require Python 3.12. Install Python 3.12, "
+            "recreate the virtual environment, and run this installer again."
+        )
+
+
 def install_backend(backend, cuda_index):
     if backend == "rocm":
         if installed_torch_backend() != "rocm":
@@ -81,7 +90,7 @@ def install_backend(backend, cuda_index):
             )
         return
     if backend == "directml":
-        require_supported_torch_python()
+        require_directml_python()
         pip_install("torch-directml")
         return
     if backend == "cuda":

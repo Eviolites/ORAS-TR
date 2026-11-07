@@ -7,33 +7,31 @@ if /I "%~1"=="-h" goto :help
 
 set "PYTHON="
 if exist ".venv\Scripts\python.exe" (
-	.venv\Scripts\python.exe -c "import sys; raise SystemExit(sys.version_info >= (3, 15))"
+	.venv\Scripts\python.exe -c "import sys; raise SystemExit(sys.version_info[:2] != (3, 12))"
 	if not errorlevel 1 set "PYTHON=.venv\Scripts\python.exe"
 	if errorlevel 1 (
-		echo Existing .venv uses an unsupported Python version. Recreating it...
+		echo Existing .venv does not use Python 3.12. Recreating it...
 		rmdir /s /q .venv
 	)
 )
 if not defined PYTHON (
 	set "BOOTSTRAP="
-	for /f "delims=" %%V in ('py -3.13 -c "import sys; print(str(sys.version_info[0]) + "." + str(sys.version_info[1]))" 2^>nul') do if "%%V"=="3.13" set "BOOTSTRAP=py -3.13"
-	if not defined BOOTSTRAP for /f "delims=" %%V in ('py -3.12 -c "import sys; print(str(sys.version_info[0]) + "." + str(sys.version_info[1]))" 2^>nul') do if "%%V"=="3.12" set "BOOTSTRAP=py -3.12"
-	if not defined BOOTSTRAP for /f "delims=" %%V in ('python -c "import sys; print(str(sys.version_info[0]) + "." + str(sys.version_info[1]))" 2^>nul') do if "%%V"=="3.13" set "BOOTSTRAP=python"
+	for /f "delims=" %%V in ('py -3.12 -c "import sys; print(str(sys.version_info[0]) + "." + str(sys.version_info[1]))" 2^>nul') do if "%%V"=="3.12" set "BOOTSTRAP=py -3.12"
 	if not defined BOOTSTRAP for /f "delims=" %%V in ('python -c "import sys; print(str(sys.version_info[0]) + "." + str(sys.version_info[1]))" 2^>nul') do if "%%V"=="3.12" set "BOOTSTRAP=python"
 	if not defined BOOTSTRAP (
-		echo Python 3.12 or 3.13 was not found. Trying the Python install manager...
-		py install 3.13
-		for /f "delims=" %%V in ('py -3.13 -c "import sys; print(str(sys.version_info[0]) + "." + str(sys.version_info[1]))" 2^>nul') do if "%%V"=="3.13" set "BOOTSTRAP=py -3.13"
+		echo Python 3.12 was not found. Trying the Python install manager...
+		py install 3.12
+		for /f "delims=" %%V in ('py -3.12 -c "import sys; print(str(sys.version_info[0]) + "." + str(sys.version_info[1]))" 2^>nul') do if "%%V"=="3.12" set "BOOTSTRAP=py -3.12"
 	)
 	if not defined BOOTSTRAP (
-		echo Trying winget to install Python 3.13...
+		echo Trying winget to install Python 3.12...
 		where winget >nul 2>&1
 		if errorlevel 1 goto :python_missing
-		winget install --id Python.Python.3.13 -e --scope user --source winget --accept-source-agreements --accept-package-agreements
+		winget install --id Python.Python.3.12 -e --scope user --source winget --accept-source-agreements --accept-package-agreements
 		if errorlevel 1 goto :failed
-		if exist "!LocalAppData!\Programs\Python\Python313\python.exe" set "BOOTSTRAP=!LocalAppData!\Programs\Python\Python313\python.exe"
+		if exist "!LocalAppData!\Programs\Python\Python312\python.exe" set "BOOTSTRAP=!LocalAppData!\Programs\Python\Python312\python.exe"
 		if not defined BOOTSTRAP (
-			for /f "delims=" %%V in ('py -3.13 -c "import sys; print(str(sys.version_info[0]) + "." + str(sys.version_info[1]))" 2^>nul') do if "%%V"=="3.13" set "BOOTSTRAP=py -3.13"
+			for /f "delims=" %%V in ('py -3.12 -c "import sys; print(str(sys.version_info[0]) + "." + str(sys.version_info[1]))" 2^>nul') do if "%%V"=="3.12" set "BOOTSTRAP=py -3.12"
 		)
 		if not defined BOOTSTRAP goto :python_missing
 	)
@@ -79,14 +77,16 @@ exit /b 0
 :failed
 echo.
 echo The setup or translation process failed.
+echo Please check the output above for any errors.
+echo The script will now be closed.
 pause
 popd
 exit /b 1
 
 :python_missing
 echo.
-echo Python 3.12 or 3.13 could not be installed automatically.
-echo Install Python 3.13 from https://www.python.org/downloads/ and run this file again.
+echo Python 3.12 could not be installed automatically.
+echo Install Python 3.12 from https://www.python.org/downloads/ and run this file again.
 pause
 popd
 exit /b 1

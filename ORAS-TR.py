@@ -140,6 +140,11 @@ def prompt_for_folder(prompt, example_path, create=False):
     folder_path = os.path.abspath(os.path.expanduser(entered_path))
     if create:
         os.makedirs(folder_path, exist_ok=True)
+    elif os.path.isfile(folder_path):
+        raise NotADirectoryError(
+            f"Expected a folder for {prompt.lower()}, but received a file: "
+            f"{folder_path}"
+        )
     elif not os.path.isdir(folder_path):
         raise FileNotFoundError(f"Folder not found: {folder_path}")
     return folder_path
