@@ -48,9 +48,11 @@ LANGUAGE_TOKENS = {
     "fa": "pes_Arab",   # Persian
     "ur": "urd_Arab",   # Urdu
 }
+GAME_TEXT_IDENTIFIER = "Thank you for coming to see\\nthe "
 
 #Prevents the translation of any control codes, including the gender symbols (which most of the time called female 'staff' lol.)
-CONTROL_CODE_PATTERN = re.compile(r"(\[.*?\]|\\[a-zA-Z]|[♂♀])")
+CONTROL_CODE_PATTERN = re.compile(r"(\[.*?\]|\\[a-zA-Z]|[♂♀]|Lv\.)")
+BRACKET_CODE_PATTERN = re.compile(r"\[.*?\]")
 
 # Section limits for specific text sections due to constraints in ORAS' code.
 # Section limit descriptions can be found in the 'docs/charlimits.md' file.
@@ -61,6 +63,11 @@ SECTION_LIMITS = {
     0: 16, 21: 16, 37: 16, 113: 16, 114: 16, 115: 16, 116: 16,
     153: 16, 154: 16, 22: 16, 51: 12,
 }
+STAT_LABELS = {
+    "HP", "ATK", "ATTACK", "DEF", "DEFENSE", "SPD", "SPEED",
+    "SP.ATK", "SP. ATK", "SP.DEF", "SP. DEF",
+}
+STAT_LABEL_MAX_LENGTH = 7
 
 
 def restore_shared_embedding(model):
@@ -161,6 +168,21 @@ def format_duration(seconds):
     return f"{seconds}s"
 
 
+def prompt_for_language_count(maximum):
+    while True:
+        entered_count = input(
+            f"How many intermediate languages should be used? (1-{maximum}): "
+        ).strip()
+        try:
+            language_count = int(entered_count)
+        except ValueError:
+            print(f"Enter a whole number from 1 to {maximum}.")
+            continue
+        if 1 <= language_count <= maximum:
+            return language_count
+        print(f"Enter a whole number from 1 to {maximum}.")
+
+
 def split_source(filepath):
     structure = []
     texts = []
@@ -170,8 +192,9 @@ def split_source(filepath):
     with open(filepath, "r", encoding="utf-16") as file:
         lines = file.readlines()
 
-    for line in lines:
+    for line_number, line in enumerate(lines, start=1):
         text = line.rstrip("\n")
+        source_text_length = len(CONTROL_CODE_PATTERN.sub("", text))
         if not text:
             structure.append({"type": "newline"})
             continue
@@ -190,9 +213,16 @@ def split_source(filepath):
                 or set(part.strip()).issubset({"-", "~", "=", "*", "_", ":", ".", ",", "!", "?", "'", '"', "(", ")", "[", "]", "{", "}", "<", ">", "/", "\\", "|", "@", "#", "$", "%", "^", "&", "+", "`"})
             ) # Ignores lines that are only punctuation or whitespace, as well as control codes
             if is_code or current_text_file in skip_files:
-                structure.append({"type": "code", "content": part})
+                content = f" {part} " if BRACKET_CODE_PATTERN.fullmatch(part) else part
+                structure.append({"type": "code", "content": content})
             else:
-                structure.append({"type": "text", "file_id": current_text_file})
+                structure.append({
+                    "type": "text",
+                    "file_id": current_text_file,
+                    "line_number": line_number,
+                    "source_text": part,
+                    "source_text_length": source_text_length,
+                })
                 texts.append(part)
         structure.append({"type": "newline"})
     return structure, texts
@@ -211,8 +241,12 @@ def rebuild_lines(structure, translated_text): # Rebuilds the original lines fro
         else:
             translated = translated_text[text_index]
             max_length = SECTION_LIMITS.get(item["file_id"])
+            if max_length is None and item["source_text_length"] <= 16:
+                max_length = 16
             if max_length is not None:
                 translated = translated[:max_length]
+            if item["source_text"].strip().upper() in STAT_LABELS:
+                translated = translated[:STAT_LABEL_MAX_LENGTH]
             current_line += translated
             text_index += 1
     return rebuilt_lines
@@ -304,11 +338,14 @@ def main():
 
     available_languages = [code for code in LANGUAGE_TOKENS if code != "en"]
     saved_languages = state.get("languages")
-    if (isinstance(saved_languages, list) and len(saved_languages) == 6
-            and saved_languages[0] == "en" and saved_languages[-1] == "en"):
+    if (isinstance(saved_languages, list) and len(saved_languages) >= 3
+            and saved_languages[0] == "en" and saved_languages[-1] == "en"
+            and all(code in available_languages for code in saved_languages[1:-1])
+            and len(set(saved_languages[1:-1])) == len(saved_languages[1:-1])):
         languages = saved_languages
     else:
-        languages = ["en", *random.sample(available_languages, 4), "en"]
+        language_count = prompt_for_language_count(len(available_languages))
+        languages = ["en", *random.sample(available_languages, language_count), "en"]
     print(f"Translation sequence: {' -> '.join(languages)}") # Final sequence of languages to be used for translation, starting and ending with English
 
     output_names = {"translated.txt"}
@@ -320,9 +357,13 @@ def main():
         candidate_path = os.path.join(directory, filename)
         with open(candidate_path, "r", encoding="utf-16") as candidate_file:
             candidate_lines = candidate_file.readlines()
-        if len(candidate_lines) >= 4 and "somewhere" in candidate_lines[3].casefold():
+        if (
+            len(candidate_lines) >= 4
+            and "somewhere" in candidate_lines[3].casefold()
+        ) or any(GAME_TEXT_IDENTIFIER in line for line in candidate_lines):
             source_files.append(filename)
             source_output_names[filename] = "gametext.txt" 
+            print(f"Detected Pokémon game text: {filename}")
         elif len(candidate_lines) >= 6846:
             story_identifier = candidate_lines[6845].casefold()
             if "blue orb" in story_identifier:
@@ -393,6 +434,7 @@ def main():
                        "source_index": current_source_index + 1, "hop_index": 0}, state_file)
         print(f"Successfully saved: {output_filepath}")
 
+    os.remove(state_path)
     total_duration = format_duration(time.perf_counter() - run_started_at)
     print(f"Completed translation run in {total_duration}")
     with open(log_path, "a", encoding="utf-8") as log_file:

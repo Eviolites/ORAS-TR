@@ -23,3 +23,4 @@ Through a bit of experimentation including *many* crashes and cross-referencing 
 * **Section 90 - Location names**, capped to 16 characters. This would cause a lot of crashes in testing, a special thanks to 'The secret headquarters of the Flare team.'...
 * **Section 98 - Pokémon species names**, capped to 12 characters. 12 was found to be the safe limit in testing, turns out a Treecko named 'clearance vehicles' was not valid enough for Alpha Sapphire during testing.
 * **Sections 113 - 116 - Items and their plurals**, capped to 16 characters each (ignoring variables). Appears to be used also to display the item in bag or text. 
+* **Short entries in all text files**, identified by source lines of 16 characters or fewer, are capped to 16 characters by default. Explicit section limits take priority, and longer entries without a section limit are not capped.
