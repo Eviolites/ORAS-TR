@@ -64,6 +64,9 @@ SECTION_LIMITS = {
     153: 16, 154: 16, 22: 16, 51: 12,
 }
 UNCAPPED_SHORT_ENTRIES = {"MYSTERY GIFT", "LIVE COMPETITION"}
+UNCAPPED_SECTION_IDS = {103}
+VERY_SHORT_ENTRY_MAX_SOURCE_LENGTH = 3
+VERY_SHORT_ENTRY_MAX_LENGTH = 12
 STAT_LABELS = {
     "HP", "ATK", "ATTACK", "DEF", "DEFENSE", "SPD", "SPEED",
     "SP.ATK", "SP. ATK", "SP.DEF", "SP. DEF",
@@ -254,15 +257,18 @@ def rebuild_lines(structure, translated_text, apply_limits=True): # Rebuilds the
         else:
             translated = translated_text[text_index]
             if apply_limits:
-                max_length = SECTION_LIMITS.get(item["file_id"])
-                if (
-                    max_length is None
-                    and item["source_text_length"] <= 16
-                    and item["source_text"].strip().upper() not in UNCAPPED_SHORT_ENTRIES
-                ):
-                    max_length = 16
-                if max_length is not None:
-                    translated = translated[:max_length]
+                if len(item["source_text"].strip()) <= VERY_SHORT_ENTRY_MAX_SOURCE_LENGTH:
+                    translated = translated[:VERY_SHORT_ENTRY_MAX_LENGTH]
+                elif item["file_id"] not in UNCAPPED_SECTION_IDS:
+                    max_length = SECTION_LIMITS.get(item["file_id"])
+                    if (
+                        max_length is None
+                        and item["source_text_length"] <= 16
+                        and item["source_text"].strip().upper() not in UNCAPPED_SHORT_ENTRIES
+                    ):
+                        max_length = 16
+                    if max_length is not None:
+                        translated = translated[:max_length]
                 if item["source_text"].strip().upper() in STAT_LABELS:
                     translated = translated[:STAT_LABEL_MAX_LENGTH]
             current_line += translated
