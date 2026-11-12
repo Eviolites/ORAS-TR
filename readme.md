@@ -100,7 +100,10 @@ __Title ID folder (requires Luma3DS Game Patching enabled)__
 
 2. Copy the newly edited `romfs` folder into the Title ID folder.
 
-3. *(optional, this is mainly when other factors such as randomisation have been applied)* Enter the `exefs` folder, copy `.code.bin`, and move it to the Title ID folder.
+3. Delete everything in the `romfs` folder except for `a/0/7` and `a/0/8` (these are the text files).
+   - *If you randomised other files using PK3DS, it is advised to keep all files, but do note that the folder size will exceed 1GB and thus can take longer to transfer.*
+
+4. *(optional, this is mainly when other factors such as randomisation have been applied)* Enter the `exefs` folder, copy `.code.bin`, and move it to the Title ID folder.
    - Your Title ID folder should now look something like this:
 
 ![An example of the Title ID folder layout](/imgs/modexample.png)
