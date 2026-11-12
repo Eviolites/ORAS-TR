@@ -101,11 +101,12 @@ __Title ID folder (requires Luma3DS Game Patching enabled)__
 2. Copy the newly edited `romfs` folder into the Title ID folder.
 
 3. Delete everything in the `romfs` folder except for `a/0/7` and `a/0/8` (these are the text files).
-   - *If you randomised other files using PK3DS, it is advised to keep all files, but do note that the folder size will exceed 1GB and thus can take longer to transfer.*
+   - *If you randomised wild encounters, starter Pokémon etc. whilst using PK3DS, keeping the files listed below will reduce size and still enable randomisation:*
+     ![An example of the randomisation layout](/imgs/randomisationexample1.png)
+     ![An example of the randomisation layout](/imgs/randomisationexample2.png)
 
-4. *(optional, this is mainly when other factors such as randomisation have been applied)* Enter the `exefs` folder, copy `.code.bin`, and move it to the Title ID folder.
+4. *(optional, this is mainly when changes to the Move Tutor or TMs have been made)* Enter the `exefs` folder, copy `.code.bin`, and move it to the Title ID folder.
    - Your Title ID folder should now look something like this:
-
 ![An example of the Title ID folder layout](/imgs/modexample.png)
 
 __If you are using Luma3DS (3DS console with CFW installed)__
