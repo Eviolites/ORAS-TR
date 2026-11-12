@@ -100,8 +100,8 @@ __Title ID folder (requires Luma3DS Game Patching enabled)__
 
 2. Copy the newly edited `romfs` folder into the Title ID folder.
 
-3. Delete everything in the `romfs` folder except for `a/0/7` and `a/0/8` (these are the text files).
-   - *If you randomised wild encounters, starter Pokémon etc. whilst using PK3DS, keeping the files listed below will reduce size and still enable randomisation:*
+3. If you only want to use the newly randomised text, delete everything in the `romfs` folder except for `a/0/7` and `a/0/8` (these are the text files).
+   - *If you randomised wild encounters, starter Pokémon etc. whilst using PK3DS, keeping the files listed below in `a/0` and `a/1` will reduce size and still enable randomisation (`a/2` can be deleted):*
      ![An example of the randomisation layout](/imgs/randomisationexample1.png)
      ![An example of the randomisation layout](/imgs/randomisationexample2.png)
 
