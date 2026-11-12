@@ -63,6 +63,7 @@ SECTION_LIMITS = {
     0: 16, 21: 16, 37: 16, 113: 16, 114: 16, 115: 16, 116: 16,
     153: 16, 154: 16, 22: 16, 51: 12,
 }
+UNCAPPED_SHORT_ENTRIES = {"MYSTERY GIFT", "LIVE COMPETITION"}
 STAT_LABELS = {
     "HP", "ATK", "ATTACK", "DEF", "DEFENSE", "SPD", "SPEED",
     "SP.ATK", "SP. ATK", "SP.DEF", "SP. DEF",
@@ -206,14 +207,26 @@ def split_source(filepath):
             structure.extend(({"type": "code", "content": text}, {"type": "newline"}))
             continue
 
-        for part in CONTROL_CODE_PATTERN.split(text):
+        parts = CONTROL_CODE_PATTERN.split(text)
+        for part_index, part in enumerate(parts):
             is_code = (
                 CONTROL_CODE_PATTERN.match(part)
                 or not part.strip()
                 or set(part.strip()).issubset({"-", "~", "=", "*", "_", ":", ".", ",", "!", "?", "'", '"', "(", ")", "[", "]", "{", "}", "<", ">", "/", "\\", "|", "@", "#", "$", "%", "^", "&", "+", "`"})
             ) # Ignores lines that are only punctuation or whitespace, as well as control codes
             if is_code or current_text_file in skip_files:
-                content = f" {part} " if BRACKET_CODE_PATTERN.fullmatch(part) else part
+                if BRACKET_CODE_PATTERN.fullmatch(part):
+                    following = next(
+                        (candidate.strip() for candidate in parts[part_index + 1:] if candidate.strip()),
+                        "",
+                    )
+                    has_punctuation_after = following and all(
+                        not character.isalnum() and character != "_"
+                        for character in following
+                    )
+                    content = f" {part}" if has_punctuation_after else f" {part} "
+                else:
+                    content = part
                 structure.append({"type": "code", "content": content})
             else:
                 structure.append({
@@ -228,7 +241,7 @@ def split_source(filepath):
     return structure, texts
 
 
-def rebuild_lines(structure, translated_text): # Rebuilds the original lines from the structure and translated text, ensuring that control codes and punctuation are preserved.
+def rebuild_lines(structure, translated_text, apply_limits=True): # Rebuilds the original lines from the structure and translated text, ensuring that control codes and punctuation are preserved.
     rebuilt_lines = []
     current_line = ""
     text_index = 0
@@ -240,13 +253,18 @@ def rebuild_lines(structure, translated_text): # Rebuilds the original lines fro
             current_line += item["content"]
         else:
             translated = translated_text[text_index]
-            max_length = SECTION_LIMITS.get(item["file_id"])
-            if max_length is None and item["source_text_length"] <= 16:
-                max_length = 16
-            if max_length is not None:
-                translated = translated[:max_length]
-            if item["source_text"].strip().upper() in STAT_LABELS:
-                translated = translated[:STAT_LABEL_MAX_LENGTH]
+            if apply_limits:
+                max_length = SECTION_LIMITS.get(item["file_id"])
+                if (
+                    max_length is None
+                    and item["source_text_length"] <= 16
+                    and item["source_text"].strip().upper() not in UNCAPPED_SHORT_ENTRIES
+                ):
+                    max_length = 16
+                if max_length is not None:
+                    translated = translated[:max_length]
+                if item["source_text"].strip().upper() in STAT_LABELS:
+                    translated = translated[:STAT_LABEL_MAX_LENGTH]
             current_line += translated
             text_index += 1
     return rebuilt_lines
@@ -268,7 +286,7 @@ class HardwareTranslator:
         self.model.generation_config.max_length = None
         self.model.eval()
 
-    def translate(self, texts, source_code, target_code):
+    def translate(self, texts, source_code, target_code, apply_limits=True):
         self.tokenizer.src_lang = LANGUAGE_TOKENS[source_code]
         target_token = self.tokenizer.convert_tokens_to_ids(LANGUAGE_TOKENS[target_code])
         translated = []
@@ -278,14 +296,20 @@ class HardwareTranslator:
         for start in range(0, len(texts), BATCH_SIZE):
             batch_started_at = time.perf_counter()
             batch = texts[start:start + BATCH_SIZE]
-            encoded = self.tokenizer(
-                batch, return_tensors="pt", padding=True, truncation=True,
-                max_length=512,
-            ).to(DEVICE)
+            tokenizer_options = {
+                "return_tensors": "pt",
+                "padding": True,
+                "truncation": apply_limits,
+            }
+            if apply_limits:
+                tokenizer_options["max_length"] = 512
+            encoded = self.tokenizer(batch, **tokenizer_options).to(DEVICE)
+            generation_options = {"forced_bos_token_id": target_token}
+            if apply_limits:
+                generation_options["max_new_tokens"] = 512
             with torch.no_grad():
                 generated = self.model.generate(
-                    **encoded, forced_bos_token_id=target_token,
-                    max_new_tokens=512,
+                    **encoded, **generation_options,
                 )
             translated.extend(self.tokenizer.batch_decode(generated, skip_special_tokens=True))
             completed = start + len(batch)
@@ -305,16 +329,20 @@ class HardwareTranslator:
         for result, original in zip(translated, texts):
             # Strip musical notes and any backslash NOT followed by a letter
             cleaned = re.sub(r'\\(?![a-zA-Z])', '', result.replace("♪", ""))
+            # Remove standalone hyphens, but preserve hyphens inside words.
+            cleaned = re.sub(r"(?<!\w)-(?=\s|$)|(?<=\s)-(?=\s|\w)", "", cleaned)
+            cleaned = re.sub(r"\s{2,}", " ", cleaned).strip()
             
             # Fall back to original English ONLY if the string is empty or just punctuation
-            if not cleaned.strip() or set(cleaned.strip()).issubset({')', '(', '.', ' '}):
+            if not cleaned.strip() or set(cleaned.strip()).issubset({')', '(', '.', ':', ' '}):
                 final_results.append(original)
             else:
-                # Dynamic Cap: 150 chars OR twice the length of the original English text (whichever is larger)
-                safe_limit = max(150, len(original) * 2)
-                
-                if len(cleaned) > safe_limit:
-                    cleaned = cleaned[:safe_limit]
+                if apply_limits:
+                    # Dynamic Cap: 150 chars OR twice the length of the original English text (whichever is larger)
+                    safe_limit = max(150, len(original) * 2)
+
+                    if len(cleaned) > safe_limit:
+                        cleaned = cleaned[:safe_limit]
                     
                 final_results.append(cleaned)
                 
@@ -392,6 +420,7 @@ def main():
         filename = source_files[current_source_index]
         filepath = os.path.join(directory, filename)
         output_name = source_output_names[filename]
+        apply_limits = output_name != "storytext.txt"
         checkpoint_path = os.path.join(export_directory, output_name)
         current_hop_start = hop_start if current_source_index == source_index else 0
         input_path = checkpoint_path if current_hop_start and os.path.exists(checkpoint_path) else filepath
@@ -405,12 +434,16 @@ def main():
             for index, text in enumerate(current_text):
                 positions.setdefault(text, []).append(index)
             unique_texts = list(positions)
-            unique_results = translator.translate(unique_texts, source_code, target_code)
+            unique_results = translator.translate(
+                unique_texts, source_code, target_code, apply_limits=apply_limits
+            )
             translated_by_text = dict(zip(unique_texts, unique_results))
             current_text = [
                 translated_by_text[text] for text in current_text
             ]
-            final_lines = rebuild_lines(structure, current_text)
+            final_lines = rebuild_lines(
+                structure, current_text, apply_limits=apply_limits
+            )
             with open(checkpoint_path, "w", encoding="utf-16") as checkpoint_file:
                 checkpoint_file.writelines(final_lines)
             with open(state_path, "w", encoding="utf-8") as state_file:
@@ -428,7 +461,9 @@ def main():
 
         output_filepath = os.path.join(export_directory, output_name)
         with open(output_filepath, "w", encoding="utf-16") as output_file:
-            output_file.writelines(rebuild_lines(structure, current_text))
+            output_file.writelines(
+                rebuild_lines(structure, current_text, apply_limits=apply_limits)
+            )
         with open(state_path, "w", encoding="utf-8") as state_file:
             json.dump({"source_directory": directory, "languages": languages,
                        "source_index": current_source_index + 1, "hop_index": 0}, state_file)
