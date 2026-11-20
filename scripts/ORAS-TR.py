@@ -64,7 +64,7 @@ SECTION_LIMITS = {
     153: 16, 154: 16, 22: 16, 51: 12,
 }
 UNCAPPED_SHORT_ENTRIES = {"MYSTERY GIFT", "LIVE COMPETITION"}
-UNCAPPED_SECTION_IDS = {103}
+UNCAPPED_SECTION_IDS = {103, 128}
 VERY_SHORT_ENTRY_MAX_SOURCE_LENGTH = 3
 VERY_SHORT_ENTRY_MAX_LENGTH = 12
 STAT_LABELS = {
@@ -389,7 +389,7 @@ def main():
         if not filename.endswith(".txt") or filename in output_names:
             continue
         candidate_path = os.path.join(directory, filename)
-        with open(candidate_path, "r", encoding="utf-16") as candidate_file:
+        with open(candidate_path, "r", encoding="utf-16-le") as candidate_file:
             candidate_lines = candidate_file.readlines()
         if (
             len(candidate_lines) >= 4
@@ -450,7 +450,7 @@ def main():
             final_lines = rebuild_lines(
                 structure, current_text, apply_limits=apply_limits
             )
-            with open(checkpoint_path, "w", encoding="utf-16") as checkpoint_file:
+            with open(checkpoint_path, "w", encoding="utf-16-le") as checkpoint_file:
                 checkpoint_file.writelines(final_lines)
             with open(state_path, "w", encoding="utf-8") as state_file:
                 json.dump({"source_directory": directory, "languages": languages,
@@ -466,7 +466,7 @@ def main():
                   f"{hop_duration}")
 
         output_filepath = os.path.join(export_directory, output_name)
-        with open(output_filepath, "w", encoding="utf-16") as output_file:
+        with open(output_filepath, "w", encoding="utf-16-le") as output_file:
             output_file.writelines(
                 rebuild_lines(structure, current_text, apply_limits=apply_limits)
             )
